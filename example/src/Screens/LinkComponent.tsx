@@ -26,13 +26,13 @@ const ArticleScreen = ({
   return (
     <ScrollView>
       <View style={styles.buttons}>
-        <Link<SimpleStackNavigation>
-          to="Album"
+        <Link
+          to="/link-component/Album"
           style={[styles.button, { padding: 8 }]}
         >
           Go to album
         </Link>
-        <Link<SimpleStackNavigation> to="Album">
+        <Link to="Album">
           {props => (
             <Button {...props} mode="contained" style={styles.button}>
               Go to album
@@ -60,17 +60,13 @@ const AlbumsScreen = ({
   return (
     <ScrollView>
       <View style={styles.buttons}>
-        <Link<SimpleStackNavigation>
-          to="Article"
-          params={{ author: 'Babel fish' }}
+        <Link
+          to="/link-component/Article?author=Babel"
           style={[styles.button, { padding: 8 }]}
         >
           Go to article
         </Link>
-        <Link<SimpleStackNavigation>
-          to="Article"
-          params={{ author: 'Luke Skywalker' }}
-        >
+        <Link to="Article?luke">
           {props => (
             <Button {...props} mode="contained" style={styles.button}>
               Go to article
