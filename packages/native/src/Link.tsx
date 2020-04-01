@@ -2,21 +2,12 @@ import * as React from 'react';
 import { Text, TextProps, GestureResponderEvent, Platform } from 'react-native';
 import LinkingContext from './LinkingContext';
 
-type TouchableProps = {
-  href?: string;
-  accessibilityRole?: any;
-  onPress?: (e?: any) => void;
-};
-
 type Props = {
   to: string;
-} & (
-  | (TextProps & { children: React.ReactNode })
-  | { children: (props: TouchableProps) => React.ReactNode }
-);
+} & (TextProps & { children: React.ReactNode });
 
 export default function Link({ to, children, ...rest }: Props) {
-  const { push } = React.useContext(LinkingContext);
+  const { linkTo } = React.useContext(LinkingContext);
   const onPress = (e: GestureResponderEvent | undefined) => {
     if ('onPress' in rest) {
       rest.onPress?.(e as GestureResponderEvent);
@@ -27,7 +18,7 @@ export default function Link({ to, children, ...rest }: Props) {
       | undefined;
 
     if (Platform.OS !== 'web' || !event) {
-      push(to);
+      linkTo(to);
       return;
     }
 
@@ -39,7 +30,7 @@ export default function Link({ to, children, ...rest }: Props) {
       !(event.metaKey || event.altKey || event.ctrlKey || event.shiftKey) // ignore clicks with modifier keys
     ) {
       event.preventDefault();
-      push(to);
+      linkTo(to);
     }
   };
 

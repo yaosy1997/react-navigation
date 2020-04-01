@@ -1,16 +1,14 @@
 import * as React from 'react';
 
 type LinkingContextType = {
-  push: (link: string) => void;
-  replace: (link: string) => void;
+  linkTo: (link: string) => void;
 };
 
 const LinkingContext = React.createContext<LinkingContextType>({
-  push: () => {
-    throw new Error('No context');
-  },
-  replace: () => {
-    throw new Error('No context');
+  linkTo: () => {
+    throw new Error(
+      "Couldn't find a linking context. Have you wrapped your app with 'NavigationContainer'?"
+    );
   },
 });
 

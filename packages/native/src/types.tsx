@@ -16,6 +16,11 @@ export type Theme = {
 
 export type LinkingOptions = {
   /**
+   * Whether deep link handling should be enabled.
+   * Defaults to true.
+   */
+  enabled?: boolean;
+  /**
    * The prefixes are stripped from the URL before parsing them.
    * Usually they are the `scheme` + `host` (e.g. `myapp://chat?user=jane`)
    * Only applicable on Android and iOS.
@@ -41,7 +46,7 @@ export type LinkingOptions = {
    */
   getStateFromPath?: typeof getStateFromPathDefault;
   /**
-   * Custom function to conver the state object to a valid URL (advanced).
+   * Custom function to convert the state object to a valid URL (advanced).
    */
   getPathFromState?: typeof getPathFromStateDefault;
 };

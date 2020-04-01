@@ -32,6 +32,7 @@ let isUsingLinking = false;
 export default function useLinking(
   ref: React.RefObject<NavigationContainerRef>,
   {
+    enabled,
     config,
     getStateFromPath = getStateFromPathDefault,
     getPathFromState = getPathFromStateDefault,
@@ -54,18 +55,24 @@ export default function useLinking(
   // We store these options in ref to avoid re-creating getInitialState and re-subscribing listeners
   // This lets user avoid wrapping the items in `React.useCallback` or `React.useMemo`
   // Not re-creating `getInitialState` is important coz it makes it easier for the user to use in an effect
+  const enabledRef = React.useRef(enabled);
   const configRef = React.useRef(config);
   const getStateFromPathRef = React.useRef(getStateFromPath);
   const getPathFromStateRef = React.useRef(getPathFromState);
 
   React.useEffect(() => {
+    enabledRef.current = enabled;
     configRef.current = config;
     getStateFromPathRef.current = getStateFromPath;
     getPathFromStateRef.current = getPathFromState;
-  }, [config, getPathFromState, getStateFromPath]);
+  }, [config, enabled, getPathFromState, getStateFromPath]);
 
   // Make it an async function to keep consistent with the native impl
   const getInitialState = React.useCallback(async () => {
+    if (!enabledRef.current) {
+      return;
+    }
+
     const path = location.pathname + location.search;
 
     if (path) {
@@ -92,10 +99,10 @@ export default function useLinking(
   const numberOfIndicesAhead = React.useRef(0);
 
   React.useEffect(() => {
-    window.addEventListener('popstate', () => {
+    const onPopState = () => {
       const navigation = ref.current;
 
-      if (!navigation) {
+      if (!navigation || !enabled) {
         return;
       }
 
@@ -169,10 +176,18 @@ export default function useLinking(
           }
         }
       }
-    });
-  }, [ref]);
+    };
+
+    window.addEventListener('popstate', onPopState);
+
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [enabled, ref]);
 
   React.useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     if (ref.current && previousStateLengthRef.current === undefined) {
       previousStateLengthRef.current = getStateLength(
         ref.current.getRootState()

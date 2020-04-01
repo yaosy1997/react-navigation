@@ -12,6 +12,7 @@ let isUsingLinking = false;
 export default function useLinking(
   ref: React.RefObject<NavigationContainerRef>,
   {
+    enabled,
     prefixes,
     config,
     getStateFromPath = getStateFromPathDefault,
@@ -37,15 +38,17 @@ export default function useLinking(
   // We store these options in ref to avoid re-creating getInitialState and re-subscribing listeners
   // This lets user avoid wrapping the items in `React.useCallback` or `React.useMemo`
   // Not re-creating `getInitialState` is important coz it makes it easier for the user to use in an effect
+  const enabledRef = React.useRef(enabled);
   const prefixesRef = React.useRef(prefixes);
   const configRef = React.useRef(config);
   const getStateFromPathRef = React.useRef(getStateFromPath);
 
   React.useEffect(() => {
+    enabledRef.current = enabled;
     prefixesRef.current = prefixes;
     configRef.current = config;
     getStateFromPathRef.current = getStateFromPath;
-  }, [config, getStateFromPath, prefixes]);
+  }, [config, enabled, getStateFromPath, prefixes]);
 
   const extractPathFromURL = React.useCallback((url: string) => {
     for (const prefix of prefixesRef.current) {
@@ -58,6 +61,10 @@ export default function useLinking(
   }, []);
 
   const getInitialState = React.useCallback(async () => {
+    if (!enabledRef.current) {
+      return undefined;
+    }
+
     const url = await Linking.getInitialURL();
     const path = url ? extractPathFromURL(url) : null;
 
@@ -70,6 +77,10 @@ export default function useLinking(
 
   React.useEffect(() => {
     const listener = ({ url }: { url: string }) => {
+      if (!enabled) {
+        return;
+      }
+
       const path = extractPathFromURL(url);
       const navigation = ref.current;
 
@@ -91,7 +102,7 @@ export default function useLinking(
     Linking.addEventListener('url', listener);
 
     return () => Linking.removeEventListener('url', listener);
-  }, [extractPathFromURL, ref]);
+  }, [enabled, extractPathFromURL, ref]);
 
   return {
     getInitialState,

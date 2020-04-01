@@ -30,14 +30,7 @@ const ArticleScreen = ({
           to="/link-component/Album"
           style={[styles.button, { padding: 8 }]}
         >
-          Go to album
-        </Link>
-        <Link to="Album">
-          {props => (
-            <Button {...props} mode="contained" style={styles.button}>
-              Go to album
-            </Button>
-          )}
+          Go to /link-component/Album
         </Link>
         <Button
           mode="outlined"
@@ -64,14 +57,7 @@ const AlbumsScreen = ({
           to="/link-component/Article?author=Babel"
           style={[styles.button, { padding: 8 }]}
         >
-          Go to article
-        </Link>
-        <Link to="Article?luke">
-          {props => (
-            <Button {...props} mode="contained" style={styles.button}>
-              Go to article
-            </Button>
-          )}
+          Go to /link-component/Article
         </Link>
         <Button
           mode="outlined"
