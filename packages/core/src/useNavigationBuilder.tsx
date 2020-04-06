@@ -177,10 +177,6 @@ export default function useNavigationBuilder<
 
   const previousRouteRef = React.useRef(route);
 
-  React.useEffect(() => {
-    previousRouteRef.current = route;
-  }, [route]);
-
   const { children, ...rest } = options;
   const { current: router } = React.useRef<Router<State, any>>(
     createRouter({
@@ -289,7 +285,7 @@ export default function useNavigationBuilder<
     previousStateRef.current = currentState;
   }, [currentState]);
 
-  let state =
+  const state =
     // If the state isn't initialized, or stale, use the state we initialized instead
     // The state won't update until there's a change needed in the state we have initalized locally
     // So it'll be `undefined` or stale untill the first navigation event happens
@@ -297,56 +293,57 @@ export default function useNavigationBuilder<
       ? (currentState as State)
       : (initializedStateRef.current as State);
 
-  let nextState: State = state;
+  React.useEffect(() => {
+    const currentState = getCurrentState();
 
-  if (!isArrayEqual(state.routeNames, routeNames)) {
-    // When the list of route names change, the router should handle it to remove invalid routes
-    nextState = router.getStateForRouteNamesChange(state, {
-      routeNames,
-      routeParamList,
-    });
-  }
+    let state = isStateInitialized(currentState)
+      ? (currentState as State)
+      : (initializedStateRef.current as State);
 
-  if (
-    previousRouteRef.current &&
-    route &&
-    route.params &&
-    typeof route.params.screen === 'string' &&
-    route.params !== previousRouteRef.current.params
-  ) {
-    // If the route was updated with new name and/or params, we should navigate there
-    // The update should be limited to current navigator only, so we call the router manually
-    const updatedState = router.getStateForAction(
-      state,
-      CommonActions.navigate(route.params.screen, route.params.params),
-      {
+    let nextState: State = state;
+
+    if (!isArrayEqual(state.routeNames, routeNames)) {
+      // When the list of route names change, the router should handle it to remove invalid routes
+      nextState = router.getStateForRouteNamesChange(state, {
         routeNames,
         routeParamList,
-      }
-    );
+      });
+    }
 
-    nextState =
-      updatedState !== null
-        ? router.getRehydratedState(updatedState, {
-            routeNames,
-            routeParamList,
-          })
-        : state;
-  }
+    const previousRoute = previousRouteRef.current;
 
-  const shouldUpdate = state !== nextState;
+    if (
+      typeof route?.params?.screen === 'string' &&
+      (route.params.screen !== previousRoute?.params?.screen ||
+        route.params.params !== previousRoute?.params?.params)
+    ) {
+      // If the route was updated with new name and/or params, we should navigate there
+      // The update should be limited to current navigator only, so we call the router manually
+      const updatedState = router.getStateForAction(
+        state,
+        CommonActions.navigate(route.params.screen, route.params.params),
+        {
+          routeNames,
+          routeParamList,
+        }
+      );
 
-  React.useEffect(() => {
-    if (shouldUpdate) {
+      nextState =
+        updatedState !== null
+          ? router.getRehydratedState(updatedState, {
+              routeNames,
+              routeParamList,
+            })
+          : state;
+    }
+
+    if (state !== nextState) {
       // If the state needs to be updated, we'll schedule an update with React
       setState(nextState);
     }
-  }, [nextState, setState, shouldUpdate]);
 
-  // The up-to-date state will come in next render, but we don't need to wait for it
-  // We can't use the outdated state since the screens have changed, which will cause error due to mismatched config
-  // So we override the state objec we return to use the latest state as soon as possible
-  state = nextState;
+    previousRouteRef.current = route;
+  });
 
   React.useEffect(() => {
     setKey(navigatorKey);
