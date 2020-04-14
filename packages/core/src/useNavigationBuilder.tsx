@@ -296,10 +296,6 @@ export default function useNavigationBuilder<
     }
   }
 
-  React.useEffect(() => {
-    previousStateRef.current = currentState;
-  }, [currentState]);
-
   let state =
     // If the state isn't initialized, or stale, use the state we initialized instead
     // The state won't update until there's a change needed in the state we have initalized locally
@@ -325,14 +321,15 @@ export default function useNavigationBuilder<
   ) {
     // If the route was updated with new name and/or params, we should navigate there
     // The update should be limited to current navigator only, so we call the router manually
-    const updatedState = router.getStateForAction(
-      nextState,
-      CommonActions.navigate(route.params.screen, route.params.params),
-      {
-        routeNames,
-        routeParamList,
-      }
+    const action = CommonActions.navigate(
+      route.params.screen,
+      route.params.params
     );
+
+    const updatedState = router.getStateForAction(nextState, action, {
+      routeNames,
+      routeParamList,
+    });
 
     nextState =
       updatedState !== null
@@ -350,6 +347,10 @@ export default function useNavigationBuilder<
       // If the state needs to be updated, we'll schedule an update
       setState(nextState);
     }
+  });
+
+  React.useEffect(() => {
+    previousStateRef.current = currentState;
   });
 
   // The up-to-date state will come in next render, but we don't need to wait for it

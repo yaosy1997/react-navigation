@@ -22,12 +22,14 @@ import {
   Appbar,
   List,
   Divider,
+  Headline,
 } from 'react-native-paper';
 import {
   InitialState,
   useLinking,
   NavigationContainerRef,
   NavigationContainer,
+  UnhandledActionBoundary,
   DefaultTheme,
   DarkTheme,
 } from '@react-navigation/native';
@@ -53,6 +55,7 @@ import MaterialBottomTabs from './Screens/MaterialBottomTabs';
 import DynamicTabs from './Screens/DynamicTabs';
 import AuthFlow from './Screens/AuthFlow';
 import CompatAPI from './Screens/CompatAPI';
+import UnhandledAction from './Screens/UnhandledAction';
 import SettingsItem from './Shared/SettingsItem';
 
 YellowBox.ignoreWarnings(['Require cycle:', 'Warning: Async Storage']);
@@ -105,6 +108,10 @@ const SCREENS = {
     title: 'Compat Layer',
     component: CompatAPI,
   },
+  UnhandledAction: {
+    title: 'Unhandled action',
+    component: UnhandledAction,
+  },
 };
 
 const Drawer = createDrawerNavigator<RootDrawerParamList>();
@@ -145,6 +152,8 @@ export default function App() {
       },
     },
   });
+
+  const [is404, setIs404] = React.useState(false);
 
   const [theme, setTheme] = React.useState(DefaultTheme);
 
@@ -214,6 +223,12 @@ export default function App() {
     return null;
   }
 
+  console.log(initialState);
+
+  if (is404) {
+    return <Headline>Oops! The page does not exist :(</Headline>;
+  }
+
   const isLargeScreen = dimensions.width > 900;
 
   return (
@@ -232,102 +247,118 @@ export default function App() {
         }
         theme={theme}
       >
-        <Drawer.Navigator drawerType={isLargeScreen ? 'permanent' : undefined}>
-          <Drawer.Screen
-            name="Root"
-            options={{
-              title: 'Examples',
-              drawerIcon: ({ size, color }) => (
-                <MaterialIcons size={size} color={color} name="folder" />
-              ),
-            }}
+        <UnhandledActionBoundary
+          onUnhandledAction={(action) => {
+            switch (action.type) {
+              case 'PUSH':
+              case 'JUMP_TO':
+              case 'NAVIGATE':
+                setIs404(true);
+                break;
+            }
+          }}
+        >
+          <Drawer.Navigator
+            drawerType={isLargeScreen ? 'permanent' : undefined}
           >
-            {({
-              navigation,
-            }: {
-              navigation: DrawerNavigationProp<RootDrawerParamList>;
-            }) => (
-              <Stack.Navigator
-                screenOptions={{
-                  headerStyleInterpolator: HeaderStyleInterpolators.forUIKit,
-                }}
-              >
-                <Stack.Screen
-                  name="Home"
-                  options={{
-                    title: 'Examples',
-                    headerLeft: isLargeScreen
-                      ? undefined
-                      : () => (
-                          <Appbar.Action
-                            color={theme.colors.text}
-                            icon="menu"
-                            onPress={() => navigation.toggleDrawer()}
-                          />
-                        ),
+            <Drawer.Screen
+              name="Root"
+              options={{
+                title: 'Examples',
+                drawerIcon: ({ size, color }) => (
+                  <MaterialIcons size={size} color={color} name="folder" />
+                ),
+              }}
+            >
+              {({
+                navigation,
+              }: {
+                navigation: DrawerNavigationProp<RootDrawerParamList>;
+              }) => (
+                <Stack.Navigator
+                  screenOptions={{
+                    headerStyleInterpolator: HeaderStyleInterpolators.forUIKit,
                   }}
                 >
-                  {({
-                    navigation,
-                  }: {
-                    navigation: StackNavigationProp<RootStackParamList>;
-                  }) => (
-                    <ScrollView
-                      style={{ backgroundColor: theme.colors.background }}
-                    >
-                      <SettingsItem
-                        label="Right to left"
-                        value={I18nManager.isRTL}
-                        onValueChange={() => {
-                          I18nManager.forceRTL(!I18nManager.isRTL);
-                          // @ts-ignore
-                          if (global.Expo) {
-                            Updates.reloadFromCache();
-                          } else {
-                            RNRestart.Restart();
-                          }
-                        }}
-                      />
-                      <Divider />
-                      <SettingsItem
-                        label="Dark theme"
-                        value={theme.dark}
-                        onValueChange={() => {
-                          AsyncStorage.setItem(
-                            THEME_PERSISTENCE_KEY,
-                            theme.dark ? 'light' : 'dark'
-                          );
+                  <Stack.Screen
+                    name="Home"
+                    options={{
+                      title: 'Examples',
+                      headerLeft: isLargeScreen
+                        ? undefined
+                        : () => (
+                            <Appbar.Action
+                              color={theme.colors.text}
+                              icon="menu"
+                              onPress={() => navigation.toggleDrawer()}
+                            />
+                          ),
+                    }}
+                  >
+                    {({
+                      navigation,
+                    }: {
+                      navigation: StackNavigationProp<RootStackParamList>;
+                    }) => (
+                      <ScrollView
+                        style={{ backgroundColor: theme.colors.background }}
+                      >
+                        <SettingsItem
+                          label="Right to left"
+                          value={I18nManager.isRTL}
+                          onValueChange={() => {
+                            I18nManager.forceRTL(!I18nManager.isRTL);
+                            // @ts-ignore
+                            if (global.Expo) {
+                              Updates.reloadFromCache();
+                            } else {
+                              RNRestart.Restart();
+                            }
+                          }}
+                        />
+                        <Divider />
+                        <SettingsItem
+                          label="Dark theme"
+                          value={theme.dark}
+                          onValueChange={() => {
+                            AsyncStorage.setItem(
+                              THEME_PERSISTENCE_KEY,
+                              theme.dark ? 'light' : 'dark'
+                            );
 
-                          setTheme((t) => (t.dark ? DefaultTheme : DarkTheme));
-                        }}
+                            setTheme((t) =>
+                              t.dark ? DefaultTheme : DarkTheme
+                            );
+                          }}
+                        />
+                        <Divider />
+                        {(Object.keys(SCREENS) as (keyof typeof SCREENS)[]).map(
+                          (name) => (
+                            <List.Item
+                              key={name}
+                              title={SCREENS[name].title}
+                              onPress={() => navigation.navigate(name)}
+                            />
+                          )
+                        )}
+                      </ScrollView>
+                    )}
+                  </Stack.Screen>
+                  {(Object.keys(SCREENS) as (keyof typeof SCREENS)[]).map(
+                    (name) => (
+                      <Stack.Screen
+                        key={name}
+                        name={name}
+                        component={SCREENS[name].component}
+                        options={{ title: SCREENS[name].title }}
                       />
-                      <Divider />
-                      {(Object.keys(SCREENS) as (keyof typeof SCREENS)[]).map(
-                        (name) => (
-                          <List.Item
-                            key={name}
-                            title={SCREENS[name].title}
-                            onPress={() => navigation.navigate(name)}
-                          />
-                        )
-                      )}
-                    </ScrollView>
+                    )
                   )}
-                </Stack.Screen>
-                {(Object.keys(SCREENS) as (keyof typeof SCREENS)[]).map(
-                  (name) => (
-                    <Stack.Screen
-                      key={name}
-                      name={name}
-                      component={SCREENS[name].component}
-                      options={{ title: SCREENS[name].title }}
-                    />
-                  )
-                )}
-              </Stack.Navigator>
-            )}
-          </Drawer.Screen>
-        </Drawer.Navigator>
+                </Stack.Navigator>
+              )}
+            </Drawer.Screen>
+          </Drawer.Navigator>
+        </UnhandledActionBoundary>
       </NavigationContainer>
     </PaperProvider>
   );
