@@ -248,6 +248,7 @@ export default function App() {
         theme={theme}
       >
         <UnhandledActionBoundary
+          onError={() => setIs404(true)}
           onUnhandledAction={(action) => {
             switch (action.type) {
               case 'PUSH':

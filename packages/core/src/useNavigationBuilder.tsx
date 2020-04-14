@@ -245,6 +245,19 @@ export default function useNavigationBuilder<
     );
   }
 
+  if (
+    typeof route?.params?.screen === 'string' &&
+    !routeNames.includes(route.params.screen)
+  ) {
+    throw new Error(
+      `Unable navigate to the screen '${
+        route.params.screen
+      }'. The available screens are: ${routeNames
+        .map((name) => `'${name}'`)
+        .join(', ')}`
+    );
+  }
+
   const isStateValid = React.useCallback(
     (state) => state.type === undefined || state.type === router.type,
     [router.type]
@@ -263,6 +276,10 @@ export default function useNavigationBuilder<
     setKey,
     getKey,
   } = React.useContext(NavigationStateContext);
+
+  if (currentState?.routes.some((route) => !screens[route.name])) {
+    throw new Error(`Invalid navigation state`);
+  }
 
   const previousStateRef = React.useRef<
     NavigationState | PartialState<NavigationState> | undefined

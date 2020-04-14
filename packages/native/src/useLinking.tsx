@@ -8,20 +8,22 @@ import {
 } from '@react-navigation/core';
 import { LinkingOptions } from './types';
 
-const getStateLength = (state: NavigationState) => {
+const getStateLength = (state: NavigationState | undefined) => {
   let length = 0;
 
-  if (state.history) {
-    length = state.history.length;
-  } else {
-    length = state.index + 1;
-  }
+  if (state) {
+    if (state.history) {
+      length = state.history.length;
+    } else {
+      length = state.index + 1;
+    }
 
-  const focusedState = state.routes[state.index].state;
+    const focusedState = state.routes[state.index].state;
 
-  if (focusedState && !focusedState.stale) {
-    // If the focused route has history entries, we need to count them as well
-    length += getStateLength(focusedState as NavigationState) - 1;
+    if (focusedState && !focusedState.stale) {
+      // If the focused route has history entries, we need to count them as well
+      length += getStateLength(focusedState as NavigationState) - 1;
+    }
   }
 
   return length;

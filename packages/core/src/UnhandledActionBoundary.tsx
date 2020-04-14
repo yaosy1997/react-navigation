@@ -2,6 +2,7 @@ import * as React from 'react';
 import { NavigationAction } from '@react-navigation/routers';
 
 type Props = {
+  onError: () => void;
   onUnhandledAction: (action: NavigationAction) => void;
   children: React.ReactNode;
 };
@@ -13,23 +14,21 @@ export const UnhandledActionContext = React.createContext<
   ((action: NavigationAction) => void) | undefined
 >(undefined);
 
-export default function UnhandledActionBoundary({
-  onUnhandledAction,
-  children,
-}: Props) {
-  const onUnhandledActionRef = React.useRef(onUnhandledAction);
+export default class UnhandledActionBoundary extends React.Component<Props> {
+  componentDidCatch(e) {
+    console.log('an error occurred', e);
+    this.props.onError(e);
+  }
 
-  React.useEffect(() => {
-    onUnhandledActionRef.current = onUnhandledAction;
-  });
+  private handleUnhandledAction = (action: NavigationAction) => {
+    this.props.onUnhandledAction(action);
+  };
 
-  const context = React.useCallback((action: NavigationAction) => {
-    onUnhandledActionRef.current(action);
-  }, []);
-
-  return (
-    <UnhandledActionContext.Provider value={context}>
-      {children}
-    </UnhandledActionContext.Provider>
-  );
+  render() {
+    return (
+      <UnhandledActionContext.Provider value={this.handleUnhandledAction}>
+        {this.props.children}
+      </UnhandledActionContext.Provider>
+    );
+  }
 }
